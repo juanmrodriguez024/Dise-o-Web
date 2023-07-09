@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Aplicación de Estudiantes</title>
+    <style>
+        #container {
+            display: flex;
+            gap: 20px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid black;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #dddddd;
+        }
+
+        .edit-button {
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 12px;
+            margin: 2px;
+            cursor: pointer;
+        }
+    </style>
+    <link rel='stylesheet' href='https://code.jquery.com/ui/1.11.1/themes/smoothness/jquery-ui.css'>
+    <script src='https://code.jquery.com/jquery-1.12.4.js'></script>
+    <script src='https://code.jquery.com/ui/1.12.1/jquery-ui.js'></script>
+    <script>
+        const apiUrl = "https://ca99-181-231-122-56.ngrok-free.app/student";
+        let rowCount = 0;
+
+        window.onload = function () {
+            $('#popUp').hide();
+            getStudents();
+            getTotalStudents();
+        };
+
+        function getStudents() {
+            fetch(apiUrl + '/getAll')
+                .then(response => response.json())
+                .then(data => {
+                    const studentTable = document.getElementById('studentTable');
+                    studentTable.innerHTML = `
+                        <tr>
+                            <th>DNI</th>
+                            <th>Last Name</th>
+                            <th>First Name</th>
+                            <th>Email</th>
+                            <th>Actions</th>
+                        </tr>
+                    `;
+                    rowCount = 0;
+                    data.forEach(student => {
+                        rowCount++;
+                        const row = document.createElement('tr');
+                        row.id = `fila_${rowCount}`;
+                        row.innerHTML = `
+                            <td>${student.dni}</td>
+                            <td>${student.lastName}</td>
+                            <td>${student.firstName}</td>
+                            <td>${student.email}</td>
+                            <td>
+                                <button class="edit-button" onclick='editStudent(${JSON.stringify(student)}, ${rowCount})'>Editar</button>
+                                <button onclick='deleteStudent(${student.userld}, ${rowCount})'>Eliminar</button>
+                            </td>
+                        `;
+                        studentTable.appendChild(row);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
+        function getTotalStudents() {
+            fetch(apiUrl + '/total')
+                .then(response => response.json())
+                .then(data => {
+                    const totalElement = document.getElementById('totalStudents');
+                    totalElement.innerHTML = data;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
+        function addStudent() {
+            const studentData = {
+                dni: document.getElementById('dni').value,
+                lastName: document.getElementById('lastName').value,
+                firstName: document.getElementById('firstName').value,
+                email: document.getElementById('email').value,
+                cohort: '0',
+                status: 'activo',
+                gender: 'masculino',
+                address: 'abc123',
+                phone: '000'
+            };
+            fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(studentData)
+            })
+                .then(response => {
+                    if (response.status === 201) {
+                        document.getElementById('dni').value = '';
+                        document.getElementById('lastName').value = '';
+                        document.getElementById('firstName').value = '';
+                        document.getElementById('email').value = '';
+                        document.getElementById('dni').focus();
+                        getStudents();
+                    } else {
+                        throw new Error('Error al agregar el estudiante.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
+        function editStudent(student, rowId) {
+            const row = document.getElementById(`fila_${rowId}`);
+            const columns = row.querySelectorAll('td');
+
+            const dni = columns[0].innerText;
+            const lastName = columns[1].innerText;
+            const firstName = columns[2].innerText;
+            const email = columns[3].innerText;
+
+            columns[0].innerHTML = `<input type="text" value="${dni}" class="edit-input" />`;
+            columns[1].innerHTML = `<input type="text" value="${lastName}" class="edit-input" />`;
+            columns[2].innerHTML = `<input type="text" value="${firstName}" class="edit-input" />`;
+            columns[3].innerHTML = `<input type="text" value="${email}" class="edit-input" />`;
+            columns[4].innerHTML = `<button class="edit-button" onclick='saveStudent(${student.userld}, ${rowId})'>Guardar</button>`;
+
+        }
+    
+
+        function saveStudent(studentId, rowId) {
+            const row = document.getElementById(`fila_${rowId}`);
+            const columns = row.querySelectorAll('td');
+
+            const updatedStudent = {
+                userld: studentId,
+                dni: columns[0].querySelector('input').value,
+                lastName: columns[1].querySelector('input').value,
+                firstName: columns[2].querySelector('input').value,
+                email: columns[3].querySelector('input').value,
+                cohort: '0',
+                status: 'activo',
+                gender: 'masculino',
+                address: 'abc123',
+                phone: '000'
+            };
+
+            fetch(apiUrl + `/${studentId}/update`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updatedStudent)
+            })
+                .then(response => {
+                    if (response.status === 200) {
+                        getStudents();
+                    } else {
+                        throw new Error('Error al actualizar el estudiante.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
+        function deleteStudent(id, rowId) {
+            if (id !== null && confirm('¿Estás seguro de que deseas eliminar este estudiante?')) {
+                fetch(apiUrl + `/${id}/delete`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                    .then(response => {
+                        if (response.status === 200) {
+                            const row = document.getElementById(`fila_${rowId}`);
+                            row.remove();
+                            getStudents();
+                        } else {
+                            throw new Error('Error al eliminar el estudiante.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <h1>Listado de Estudiantes</h1>
+
+    <div id="container">
+        <table id="studentTable"></table>
+
+        <div>
+            <h2>Total de Estudiantes: <span id="totalStudents"></span></h2>
+
+            <h3>Agregar Estudiante:</h3>
+            <label for="dni">
+                <label for="dni">DNI:</label>
+                <input type="text" id="dni" placeholder="DNI">
+                <br>
+                <label for="lastName">Apellido:</label>
+                <input type="text" id="lastName" placeholder="Apellido">
+                <br>
+                <label for="firstName">Nombre:</label>
+                <input type="text" id="firstName" placeholder="Nombre">
+                <br>
+                <label for="email">Email:</label>
+                <input type="text" id="email" placeholder="Email">
+                <br>
+                <button onclick="addStudent()">Agregar Estudiante</button>
+            </label>
+        </div>
+    </div>
+
+    <div id="popUp" title="Editar Estudiante">
+        <form>
+            <label for="dni2">DNI:</label>
+            <input type="text" id="dni2">
+            <br>
+            <label for="lastName2">Apellido:</label>
+            <input type="text" id="lastName2">
+            <br>
+            <label for="firstName2">Nombre:</label>
+            <input type="text" id="firstName2">
+            <br>
+            <label for="email2">Email:</label>
+            <input type="text" id="email2">
+            <br>
+            <input type="hidden" name="id2">
+            <button onclick="updateStudent()">Actualizar Estudiante</button>
+        </form>
+    </div>
+</body>
+
+</html>
+
