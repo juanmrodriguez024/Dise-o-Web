@@ -47,11 +47,11 @@
 
         window.onload = function () {
             $('#popUp').hide();
-            getStudents();
-            getTotalStudents();
+            obtenerEstudiantes();
+            totalEstudiantes();
         };
 
-        function getStudents() {
+        function obtenerEstudiantes() {
             fetch(apiUrl + '/getAll')
                 .then(response => response.json())
                 .then(data => {
@@ -88,7 +88,7 @@
                 });
         }
 
-        function getTotalStudents() {
+        function totalEstudiantes() {
             fetch(apiUrl + '/total')
                 .then(response => response.json())
                 .then(data => {
@@ -100,7 +100,7 @@
                 });
         }
 
-        function addStudent() {
+        function agregarEstudiante() {
             const studentData = {
                 dni: document.getElementById('dni').value,
                 lastName: document.getElementById('lastName').value,
@@ -126,7 +126,7 @@
                         document.getElementById('firstName').value = '';
                         document.getElementById('email').value = '';
                         document.getElementById('dni').focus();
-                        getStudents();
+                        obtenerEstudiantes();
                     } else {
                         throw new Error('Error al agregar el estudiante.');
                     }
@@ -136,7 +136,7 @@
                 });
         }
 
-        function editStudent(student, rowId) {
+        function editarEstudiante(student, rowId) {
             const row = document.getElementById(`fila_${rowId}`);
             const columns = row.querySelectorAll('td');
 
@@ -154,7 +154,7 @@
         }
     
 
-        function saveStudent(studentId, rowId) {
+        function guardarEstudiante(studentId, rowId) {
             const row = document.getElementById(`fila_${rowId}`);
             const columns = row.querySelectorAll('td');
 
@@ -180,7 +180,7 @@
             })
                 .then(response => {
                     if (response.status === 200) {
-                        getStudents();
+                        obtenerEstudiantes();
                     } else {
                         throw new Error('Error al actualizar el estudiante.');
                     }
@@ -190,7 +190,7 @@
                 });
         }
 
-        function deleteStudent(id, rowId) {
+        function borrarEstudiante(id, rowId) {
             if (id !== null && confirm('¿Estás seguro de que deseas eliminar este estudiante?')) {
                 fetch(apiUrl + `/${id}/delete`, {
                     method: 'POST',
@@ -202,7 +202,7 @@
                         if (response.status === 200) {
                             const row = document.getElementById(`fila_${rowId}`);
                             row.remove();
-                            getStudents();
+                            obtenerEstudiantes();
                         } else {
                             throw new Error('Error al eliminar el estudiante.');
                         }
@@ -238,7 +238,7 @@
                 <label for="email">Email:</label>
                 <input type="text" id="email" placeholder="Email">
                 <br>
-                <button onclick="addStudent()">Agregar Estudiante</button>
+                <button onclick="agregarEstudiante()">Agregar Estudiante</button>
             </label>
         </div>
     </div>
@@ -258,7 +258,7 @@
             <input type="text" id="email2">
             <br>
             <input type="hidden" name="id2">
-            <button onclick="updateStudent()">Actualizar Estudiante</button>
+            <button onclick="actualizarEstudiante()">Actualizar Estudiante</button>
         </form>
     </div>
 </body>
